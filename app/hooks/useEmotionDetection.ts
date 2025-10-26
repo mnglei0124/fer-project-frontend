@@ -14,6 +14,28 @@ export const useEmotionDetection = () => {
   >([]);
   const [showCamera, setShowCamera] = useState(false);
 
+  // Function to process emotion probabilities and update state
+  const processEmotionResults = (emotionProbs: { [key: string]: number }) => {
+    const newEmotionData = emotions.map((emotion) => ({
+      ...emotion,
+      confidence: emotionProbs[emotion.name] || 0,
+    }));
+
+    setEmotionData(newEmotionData);
+
+    const dominantEmotion = Object.entries(emotionProbs)
+      .reduce((a, b) => (emotionProbs[a[0]] > emotionProbs[b[0]] ? a : b))?.[0]
+      .toLowerCase();
+
+    setCurrentEmotion(dominantEmotion);
+
+    const matchingSongs = songs.filter(
+      (song) => song.emotion === dominantEmotion
+    );
+    const otherSongs = songs.filter((song) => song.emotion !== dominantEmotion);
+    setRecommendedSongs([...matchingSongs, ...otherSongs.slice(0, 2)]);
+  };
+
   // Real emotion detection using camera
   useEffect(() => {
     if (isAnalyzing) {
@@ -34,35 +56,7 @@ export const useEmotionDetection = () => {
 
             if (response.ok) {
               const emotionProbs = await response.json();
-
-              // Convert API response to our emotion data format
-              const newEmotionData = emotions.map((emotion) => ({
-                ...emotion,
-                confidence: emotionProbs[emotion.name] || 0,
-              }));
-
-              setEmotionData(newEmotionData);
-
-              // Find the emotion with highest confidence
-              const dominantEmotion = Object.entries(emotionProbs)
-                .reduce((a, b) =>
-                  emotionProbs[a[0]] > emotionProbs[b[0]] ? a : b
-                )[0]
-                .toLowerCase();
-
-              setCurrentEmotion(dominantEmotion);
-
-              // Get songs for the detected emotion
-              const matchingSongs = songs.filter(
-                (song) => song.emotion === dominantEmotion
-              );
-              const otherSongs = songs.filter(
-                (song) => song.emotion !== dominantEmotion
-              );
-              setRecommendedSongs([
-                ...matchingSongs,
-                ...otherSongs.slice(0, 2),
-              ]);
+              processEmotionResults(emotionProbs); // Use the new function
             }
           }
         } catch (error) {
@@ -120,5 +114,6 @@ export const useEmotionDetection = () => {
     showCamera,
     startAnalysis,
     stopAnalysis,
+    processEmotionResults, // Expose the new function
   };
 };

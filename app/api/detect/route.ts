@@ -2,11 +2,25 @@ import { NextRequest, NextResponse } from "next/server";
 
 export async function POST(request: NextRequest) {
   try {
-    const { image } = await request.json();
+    const formData = await request.formData();
+    const file = formData.get("image") as File;
 
-    if (!image) {
+    if (!file) {
       return NextResponse.json({ error: "No image provided" }, { status: 400 });
     }
+
+    // Read the image file as an ArrayBuffer
+    const arrayBuffer = await file.arrayBuffer();
+    const buffer = Buffer.from(arrayBuffer);
+    const base64Image = buffer.toString("base64");
+
+    // Determine content type for data URL
+    let contentType = "application/octet-stream";
+    if (file.type.startsWith("image/")) {
+      contentType = file.type;
+    }
+
+    const dataUrl = `data:${contentType};base64,${base64Image}`;
 
     // Call your Python backend
     const backendUrl =
@@ -17,7 +31,7 @@ export async function POST(request: NextRequest) {
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({ image }),
+      body: JSON.stringify({ image: dataUrl }),
     });
 
     if (!response.ok) {

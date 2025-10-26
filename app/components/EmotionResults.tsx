@@ -24,6 +24,12 @@ export default function EmotionResults({
       <h3 className="text-xl font-semibold text-white mb-6">
         Detected Emotions
       </h3>
+      {currentEmotion && (
+        <p className="text-white text-lg mb-4">
+          Current Mood:{" "}
+          <span className="font-bold capitalize">{currentEmotion}</span>
+        </p>
+      )}
       <div className="space-y-4">
         {emotionData.map((emotion) => (
           <div key={emotion.name} className="flex items-center justify-between">
